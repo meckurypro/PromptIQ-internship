@@ -2,61 +2,52 @@ import Head from 'next/head';
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-const WHATSAPP_GROUP = 'https://chat.whatsapp.com/EFHWekt4c6rJtnumWZpqMT';
-
-// ─── PRICE CONFIG ────────────────────────────────────────────────────────────
+// ─── PRICE CONFIG ─────────────────────────────────────────────────────────────
 // Controlled entirely by Vercel env var: NEXT_PUBLIC_PRICE_KOBO
-// To update price: change env var in Vercel dashboard → redeploy. Zero code changes..
+// To update price: change env var in Vercel dashboard → redeploy. Zero code changes.
 // 1000000 = ₦10,000 | 1500000 = ₦15,000 | 2500000 = ₦25,000
 const PRICE_KOBO = parseInt(process.env.NEXT_PUBLIC_PRICE_KOBO || '1000000');
 const PRICE_DISPLAY = '₦' + (PRICE_KOBO / 100).toLocaleString('en-NG', { maximumFractionDigits: 0 });
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CURRICULUM = [
-  { n: '01', name: 'Idea Refinement', desc: 'Turn a raw concept into a production-ready brief. Story structure, visual language, scene planning.' },
+  { n: '01', name: 'Idea Refinement',       desc: 'Turn a raw concept into a production-ready brief. Story structure, visual language, scene planning.' },
   { n: '02', name: 'Character Consistency', desc: 'Build AI characters that look identical across every scene, episode and platform.' },
-  { n: '03', name: 'Advanced Prompting', desc: 'The language of AI generation. Get exactly what you see in your head onto the screen.' },
-  { n: '04', name: 'Image to Video', desc: 'Animate still images into cinematic motion. Pacing, camera movement, scene flow.' },
-  { n: '05', name: 'Scene Consistency', desc: 'Visual continuity across cuts. Lighting, colour grading, environmental coherence.' },
-  { n: '06', name: 'Sound FX', desc: 'The audio layer that makes visuals feel real. Ambient sound, foley, atmosphere design.' },
-  { n: '07', name: 'AI Music Creation', desc: 'Score your productions. Mood-matched music generated and edited for your scenes.' },
-  { n: '08', name: 'VFX', desc: 'Visual effects that elevate the work. Transitions, overlays, cinematic treatments.' },
-  { n: '09', name: 'CapCut Editing', desc: 'Final assembly. Pacing. Timing. The difference between raw footage and a finished film.' },
+  { n: '03', name: 'Advanced Prompting',    desc: 'The language of AI generation. Get exactly what you see in your head onto the screen.' },
+  { n: '04', name: 'Image to Video',        desc: 'Animate still images into cinematic motion. Pacing, camera movement, scene flow.' },
+  { n: '05', name: 'Scene Consistency',     desc: 'Visual continuity across cuts. Lighting, colour grading, environmental coherence.' },
+  { n: '06', name: 'Sound FX',              desc: 'The audio layer that makes visuals feel real. Ambient sound, foley, atmosphere design.' },
+  { n: '07', name: 'AI Music Creation',     desc: 'Score your productions. Mood-matched music generated and edited for your scenes.' },
+  { n: '08', name: 'VFX',                   desc: 'Visual effects that elevate the work. Transitions, overlays, cinematic treatments.' },
+  { n: '09', name: 'CapCut Editing',        desc: 'Final assembly. Pacing. Timing. The difference between raw footage and a finished film.' },
 ];
 
 const BENEFITS = [
-  { icon: '🎬', title: 'Real Production Experience', body: 'Practice on actual PromptIQ productions. Your work appears in content with real audiences — not mock exercises.' },
-  { icon: '🧠', title: 'Direct Mentorship', body: 'Learn from the founder of a brand that built 33k followers in 5 weeks. Inside the group, personally.' },
-  { icon: '📁', title: 'A Portfolio That Proves It', body: 'Three months of cinematic AI work you can show any brand, agency or client. Real work, real results.' },
-  { icon: '🌍', title: 'International Cohort', body: 'Work alongside creators from Nigeria, Ghana and beyond. The network you build here is part of the value.' },
+  { icon: '🎬', title: 'Real Production Experience',      body: 'Practice on actual PromptIQ productions. Your work appears in content with real audiences — not mock exercises.' },
+  { icon: '🧠', title: 'Direct Mentorship',               body: 'Learn from the founder of a brand that built 33k followers in 5 weeks. Inside the group, personally.' },
+  { icon: '📁', title: 'A Portfolio That Proves It',      body: 'Three months of cinematic AI work you can show any brand, agency or client. Real work, real results.' },
+  { icon: '🌍', title: 'International Cohort',            body: 'Work alongside creators from Nigeria, Ghana and beyond. The network you build here is part of the value.' },
   { icon: '🚀', title: 'A Head Start on a New Industry', body: 'Cinematic AI content creation is still new. The people who learn now set the standard everyone else follows.' },
   { icon: '📋', title: '3-Month Internship — Fixed Term', body: 'The internship runs for exactly 3 months. After that, it ends cleanly. You leave with your skills, your portfolio, and full ownership of your subsequent work.' },
   { icon: '📣', title: 'PromptIQ Promotes You for 1 Month', body: 'When you finish and launch your own page, PromptIQ will actively promote you for a full month across our platforms. You built with us — we send our audience to you.' },
 ];
 
-// ─── PAYSTACK LOADER ─────────────────────────────────────────────────────────
-// Dynamically injects the Paystack script only when payment is triggered.
-// Avoids the "must be inside a form element" error caused by loading inline.js
-// eagerly via Next.js <Script> before any form context exists.
+// ─── PAYSTACK SCRIPT LOADER ───────────────────────────────────────────────────
+// Dynamically injects the Paystack Popup V2 script only when payment is triggered.
+// Avoids hydration errors that occur when loading inline.js eagerly via Next.js <Script>.
 function loadPaystackScript() {
   return new Promise((resolve, reject) => {
-    // Already loaded — resolve immediately
-    if (window.PaystackPop) {
-      resolve();
-      return;
-    }
-    // Script tag already injected but not yet ready
+    if (window.PaystackPop) { resolve(); return; }
     const existing = document.getElementById('paystack-inline');
     if (existing) {
       existing.addEventListener('load', resolve);
       existing.addEventListener('error', reject);
       return;
     }
-    // First load
     const script = document.createElement('script');
-    script.id  = 'paystack-inline';
-    script.src = 'https://js.paystack.co/v1/inline.js';
-    script.async = true;
+    script.id     = 'paystack-inline';
+    script.src    = 'https://js.paystack.co/v2/inline.js';
+    script.async  = true;
     script.onload  = resolve;
     script.onerror = reject;
     document.body.appendChild(script);
@@ -65,10 +56,10 @@ function loadPaystackScript() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const [step, setStep] = useState('form'); // 'form' | 'paying'
-  const [form, setForm] = useState({ name: '', email: '', whatsapp: '', country: '', experience: '', motivation: '' });
-  const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
+  const [step, setStep]               = useState('form'); // 'form' | 'paying'
+  const [form, setForm]               = useState({ name: '', email: '', whatsapp: '', country: '', experience: '', motivation: '' });
+  const [errors, setErrors]           = useState({});
+  const [submitting, setSubmitting]   = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [applicationId, setApplicationId] = useState(null);
   const revRefs = useRef([]);
@@ -126,7 +117,7 @@ export default function Home() {
       setApplicationId(data.id);
       setStep('paying');
 
-      // Small delay so the 'paying' UI renders before the popup appears
+      // Small delay so the 'paying' UI renders before the popup opens
       setTimeout(() => openPaystack(data.id, { ...form }), 300);
 
     } catch (err) {
@@ -137,11 +128,11 @@ export default function Home() {
     }
   };
 
-  // ─── openPaystack ───────────────────────────────────────────────────────────
+  // ─── openPaystack (Paystack Popup V2) ────────────────────────────────────────
+  // Uses newTransaction (V2 API) instead of the legacy setup + openIframe (V1).
+  // V2 works reliably on mobile and uses onSuccess / onCancel callbacks.
   // Accepts appId and a formSnapshot so it never reads stale closure state.
-  // Loads the Paystack script on demand — no <Script> tag needed in <Head>.
   const openPaystack = async (appId, formSnapshot) => {
-    // formSnapshot falls back to current form state when called from 'paying' step button
     const data = formSnapshot || form;
 
     try {
@@ -158,7 +149,9 @@ export default function Home() {
 
     const ref = 'IQC-' + Date.now() + '-' + Math.floor(Math.random() * 99999);
 
-    const handler = window.PaystackPop.setup({
+    // ── Paystack Popup V2 ── newTransaction replaces setup + openIframe ──────
+    const paystack = new window.PaystackPop();
+    paystack.newTransaction({
       key:      process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
       email:    data.email,
       amount:   PRICE_KOBO,
@@ -174,7 +167,7 @@ export default function Home() {
           { display_name: 'Programme',      variable_name: 'programme',  value: 'PromptIQ Cinematic AI Internship — Cohort 1' },
         ],
       },
-      callback: async (response) => {
+      onSuccess: async (response) => {
         if (appId) {
           await supabase
             .from('applications')
@@ -183,26 +176,16 @@ export default function Home() {
         }
         window.location.href = '/success';
       },
-      onClose: () => {
-        // User closed without paying — keep them on 'paying' step so they can retry
+      onCancel: () => {
+        // User closed without completing payment — keep on 'paying' step so they can retry
         setStep('paying');
       },
     });
-
-    handler.openIframe();
   };
+  // ─────────────────────────────────────────────────────────────────────────────
 
   return (
     <>
-      {/* ─── DEBUG: REMOVE AFTER CONFIRMING ENV VARS ARE LOADED ─── */}
-      <p style={{ color: 'red', fontSize: '12px' }}>
-        {process.env.NEXT_PUBLIC_SUPABASE_URL || 'NO URL'}
-      </p>
-      <p style={{ color: 'red', fontSize: '12px' }}>
-        {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'KEY OK' : 'NO KEY'}
-      </p>
-      {/* ─── END DEBUG ─── */}
-
       <Head>
         <title>Cinematic AI Internship — PromptIQ</title>
         <meta name="description" content="A 3-month internship in cinematic AI content creation. Taught by PromptIQ — the studio behind millions of views." />
@@ -211,10 +194,9 @@ export default function Home() {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
-        {/* NOTE: Paystack inline.js is intentionally NOT loaded here.
+        {/* Paystack inline.js is intentionally NOT loaded here.
             It is injected dynamically by loadPaystackScript() only when
-            the user triggers payment. Loading it via <Script> caused
-            "must be inside a form element" errors during React hydration. */}
+            the user triggers payment, preventing hydration errors. */}
       </Head>
 
       <style>{`
@@ -441,8 +423,8 @@ export default function Home() {
               <form onSubmit={handleSubmit} noValidate>
                 <div className="price-pill">✦ Cohort 1 — {PRICE_DISPLAY}</div>
                 {[
-                  { id: 'name',     label: 'Full Name',                  type: 'text',  placeholder: 'Your full name' },
-                  { id: 'email',    label: 'Email Address',               type: 'email', placeholder: 'your@email.com' },
+                  { id: 'name',     label: 'Full Name',                   type: 'text',  placeholder: 'Your full name' },
+                  { id: 'email',    label: 'Email Address',                type: 'email', placeholder: 'your@email.com' },
                   { id: 'whatsapp', label: 'WhatsApp (with country code)', type: 'tel',   placeholder: '+234 800 000 0000' },
                 ].map(f => (
                   <div className="form-row" key={f.id}>
