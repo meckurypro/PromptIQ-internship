@@ -31,7 +31,7 @@ const BENEFITS = [
   { icon: '📁', title: 'A Portfolio That Proves It', body: 'Three months of cinematic AI work you can show any brand, agency or client. Real work, real results.' },
   { icon: '🌍', title: 'International Cohort', body: 'Work alongside creators from Nigeria, Ghana and beyond. The network you build here is part of the value.' },
   { icon: '🚀', title: 'A Head Start on a New Industry', body: 'Cinematic AI content creation is still new. The people who learn now set the standard everyone else follows.' },
-  { icon: '📋', title: '3-Month Internship — Then You're Free', body: 'The internship contract runs for exactly 3 months. After that, it ends cleanly. You own your skills, your portfolio, and your future.' },
+  { icon: '📋', title: '3-Month Internship — Fixed Term', body: 'The internship runs for exactly 3 months. After that, it ends cleanly. You leave with your skills, your portfolio, and full ownership of your work.' },
   { icon: '📣', title: 'PromptIQ Promotes You for 1 Month', body: 'When you finish and launch your own page, PromptIQ will actively promote you for a full month across our platforms. You built with us — we send our audience to you.' },
 ];
 
