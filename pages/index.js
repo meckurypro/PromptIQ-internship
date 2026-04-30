@@ -1,6 +1,5 @@
 import Head from 'next/head';
 import { useEffect, useRef, useState } from 'react';
-import Script from 'next/script';
 import { supabase } from '../lib/supabase';
 
 const WHATSAPP_GROUP = 'https://chat.whatsapp.com/EFHWekt4c6rJtnumWZpqMT';
@@ -35,8 +34,38 @@ const BENEFITS = [
   { icon: '📣', title: 'PromptIQ Promotes You for 1 Month', body: 'When you finish and launch your own page, PromptIQ will actively promote you for a full month across our platforms. You built with us — we send our audience to you.' },
 ];
 
+// ─── PAYSTACK LOADER ─────────────────────────────────────────────────────────
+// Dynamically injects the Paystack script only when payment is triggered.
+// Avoids the "must be inside a form element" error caused by loading inline.js
+// eagerly via Next.js <Script> before any form context exists.
+function loadPaystackScript() {
+  return new Promise((resolve, reject) => {
+    // Already loaded — resolve immediately
+    if (window.PaystackPop) {
+      resolve();
+      return;
+    }
+    // Script tag already injected but not yet ready
+    const existing = document.getElementById('paystack-inline');
+    if (existing) {
+      existing.addEventListener('load', resolve);
+      existing.addEventListener('error', reject);
+      return;
+    }
+    // First load
+    const script = document.createElement('script');
+    script.id  = 'paystack-inline';
+    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.async = true;
+    script.onload  = resolve;
+    script.onerror = reject;
+    document.body.appendChild(script);
+  });
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function Home() {
-  const [step, setStep] = useState('form'); // form | paying
+  const [step, setStep] = useState('form'); // 'form' | 'paying'
   const [form, setForm] = useState({ name: '', email: '', whatsapp: '', country: '', experience: '', motivation: '' });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -76,8 +105,6 @@ export default function Home() {
     setSubmitError('');
 
     try {
-      // Store application in Supabase with status 'pending'
-      // Payment ref and status will update after Paystack confirms
       const { data, error } = await supabase
         .from('applications')
         .insert([{
@@ -96,10 +123,11 @@ export default function Home() {
 
       if (error) throw error;
 
-      // Store the Supabase row ID so we can update it after payment
       setApplicationId(data.id);
       setStep('paying');
-      setTimeout(() => openPaystack(data.id), 300);
+
+      // Small delay so the 'paying' UI renders before the popup appears
+      setTimeout(() => openPaystack(data.id, { ...form }), 300);
 
     } catch (err) {
       console.error('Supabase insert error:', err);
@@ -109,43 +137,54 @@ export default function Home() {
     }
   };
 
-  const openPaystack = (appId) => {
-    if (typeof window === 'undefined' || !window.PaystackPop) return;
+  // ─── openPaystack ───────────────────────────────────────────────────────────
+  // Accepts appId and a formSnapshot so it never reads stale closure state.
+  // Loads the Paystack script on demand — no <Script> tag needed in <Head>.
+  const openPaystack = async (appId, formSnapshot) => {
+    // formSnapshot falls back to current form state when called from 'paying' step button
+    const data = formSnapshot || form;
+
+    try {
+      await loadPaystackScript();
+    } catch {
+      setSubmitError('Could not load payment processor. Please refresh and try again.');
+      return;
+    }
+
+    if (!window.PaystackPop) {
+      setSubmitError('Payment processor unavailable. Please refresh and try again.');
+      return;
+    }
+
     const ref = 'IQC-' + Date.now() + '-' + Math.floor(Math.random() * 99999);
 
     const handler = window.PaystackPop.setup({
-      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-      email: form.email,
-      amount: PRICE_KOBO,
+      key:      process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+      email:    data.email,
+      amount:   PRICE_KOBO,
       currency: 'NGN',
       ref,
       metadata: {
         custom_fields: [
-          { display_name: 'Applicant Name',  variable_name: 'name',       value: form.name },
-          { display_name: 'WhatsApp',        variable_name: 'whatsapp',   value: form.whatsapp },
-          { display_name: 'Country',         variable_name: 'country',    value: form.country },
-          { display_name: 'Experience',      variable_name: 'experience', value: form.experience },
-          { display_name: 'Supabase ID',     variable_name: 'app_id',     value: appId || applicationId },
-          { display_name: 'Programme',       variable_name: 'programme',  value: 'PromptIQ Cinematic AI Internship — Cohort 1' },
-        ]
+          { display_name: 'Applicant Name', variable_name: 'name',       value: data.name },
+          { display_name: 'WhatsApp',       variable_name: 'whatsapp',   value: data.whatsapp },
+          { display_name: 'Country',        variable_name: 'country',    value: data.country },
+          { display_name: 'Experience',     variable_name: 'experience', value: data.experience },
+          { display_name: 'Supabase ID',    variable_name: 'app_id',     value: appId },
+          { display_name: 'Programme',      variable_name: 'programme',  value: 'PromptIQ Cinematic AI Internship — Cohort 1' },
+        ],
       },
       callback: async (response) => {
-        // Update the application row with the Paystack reference and mark as paid
-        const id = appId || applicationId;
-        if (id) {
+        if (appId) {
           await supabase
             .from('applications')
-            .update({
-              payment_ref:    response.reference,
-              payment_status: 'paid',
-            })
-            .eq('id', id);
+            .update({ payment_ref: response.reference, payment_status: 'paid' })
+            .eq('id', appId);
         }
         window.location.href = '/success';
       },
       onClose: () => {
-        // User closed Paystack without paying — row stays as 'pending' in Supabase
-        // They can reopen payment via the button shown in 'paying' step
+        // User closed without paying — keep them on 'paying' step so they can retry
         setStep('paying');
       },
     });
@@ -163,9 +202,11 @@ export default function Home() {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+        {/* NOTE: Paystack inline.js is intentionally NOT loaded here.
+            It is injected dynamically by loadPaystackScript() only when
+            the user triggers payment. Loading it via <Script> caused
+            "must be inside a form element" errors during React hydration. */}
       </Head>
-
-      <Script src="https://js.paystack.co/v1/inline.js" strategy="beforeInteractive" />
 
       <style>{`
         :root {
@@ -391,9 +432,9 @@ export default function Home() {
               <form onSubmit={handleSubmit} noValidate>
                 <div className="price-pill">✦ Cohort 1 — {PRICE_DISPLAY}</div>
                 {[
-                  { id: 'name',     label: 'Full Name',                      type: 'text',  placeholder: 'Your full name' },
-                  { id: 'email',    label: 'Email Address',                   type: 'email', placeholder: 'your@email.com' },
-                  { id: 'whatsapp', label: 'WhatsApp (with country code)',     type: 'tel',   placeholder: '+234 800 000 0000' },
+                  { id: 'name',     label: 'Full Name',                  type: 'text',  placeholder: 'Your full name' },
+                  { id: 'email',    label: 'Email Address',               type: 'email', placeholder: 'your@email.com' },
+                  { id: 'whatsapp', label: 'WhatsApp (with country code)', type: 'tel',   placeholder: '+234 800 000 0000' },
                 ].map(f => (
                   <div className="form-row" key={f.id}>
                     <label className="form-label" htmlFor={f.id}>{f.label}</label>
@@ -448,9 +489,10 @@ export default function Home() {
               <div className="paying-state">
                 <h3>One last step.</h3>
                 <p>Your application is saved. Complete your {PRICE_DISPLAY} payment to secure your spot in Cohort 1.</p>
-                <button className="form-submit" onClick={() => openPaystack(applicationId)}>
+                <button className="form-submit" onClick={() => openPaystack(applicationId, null)}>
                   Complete Payment — {PRICE_DISPLAY} →
                 </button>
+                {submitError && <p className="submit-err">{submitError}</p>}
               </div>
             )}
           </div>
