@@ -3,9 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 // ─── PRICE CONFIG ─────────────────────────────────────────────────────────────
-// Controlled entirely by Vercel env var: NEXT_PUBLIC_PRICE_KOBO
-// To update price: change env var in Vercel dashboard → redeploy. Zero code changes.
-// 1000000 = ₦10,000 | 1500000 = ₦15,000 | 2500000 = ₦25,000
 const PRICE_KOBO = parseInt(process.env.NEXT_PUBLIC_PRICE_KOBO || '1000000');
 const PRICE_DISPLAY = '₦' + (PRICE_KOBO / 100).toLocaleString('en-NG', { maximumFractionDigits: 0 });
 // ─────────────────────────────────────────────────────────────────────────────
@@ -32,9 +29,6 @@ const BENEFITS = [
   { icon: '📣', title: 'PromptIQ Promotes You for 1 Month', body: 'When you finish and launch your own page, PromptIQ will actively promote you for a full month across our platforms. You built with us — we send our audience to you.' },
 ];
 
-// ─── PAYSTACK SCRIPT LOADER ───────────────────────────────────────────────────
-// Dynamically injects the Paystack Popup V2 script only when payment is triggered.
-// Avoids hydration errors that occur when loading inline.js eagerly via Next.js <Script>.
 function loadPaystackScript() {
   return new Promise((resolve, reject) => {
     if (window.PaystackPop) { resolve(); return; }
@@ -53,10 +47,9 @@ function loadPaystackScript() {
     document.body.appendChild(script);
   });
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const [step, setStep]               = useState('form'); // 'form' | 'paying'
+  const [step, setStep]               = useState('form');
   const [form, setForm]               = useState({ name: '', email: '', whatsapp: '', country: '', experience: '', motivation: '' });
   const [errors, setErrors]           = useState({});
   const [submitting, setSubmitting]   = useState(false);
@@ -116,8 +109,6 @@ export default function Home() {
 
       setApplicationId(data.id);
       setStep('paying');
-
-      // Small delay so the 'paying' UI renders before the popup opens
       setTimeout(() => openPaystack(data.id, { ...form }), 300);
 
     } catch (err) {
@@ -128,10 +119,6 @@ export default function Home() {
     }
   };
 
-  // ─── openPaystack (Paystack Popup V2) ────────────────────────────────────────
-  // Uses newTransaction (V2 API) instead of the legacy setup + openIframe (V1).
-  // V2 works reliably on mobile and uses onSuccess / onCancel callbacks.
-  // Accepts appId and a formSnapshot so it never reads stale closure state.
   const openPaystack = async (appId, formSnapshot) => {
     const data = formSnapshot || form;
 
@@ -149,7 +136,6 @@ export default function Home() {
 
     const ref = 'IQC-' + Date.now() + '-' + Math.floor(Math.random() * 99999);
 
-    // ── Paystack Popup V2 ── newTransaction replaces setup + openIframe ──────
     const paystack = new window.PaystackPop();
     paystack.newTransaction({
       key:      process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
@@ -167,22 +153,15 @@ export default function Home() {
           { display_name: 'Programme',      variable_name: 'programme',  value: 'PromptIQ Cinematic AI Internship — Cohort 1' },
         ],
       },
-      onSuccess: async (response) => {
-        if (appId) {
-          await supabase
-            .from('applications')
-            .update({ payment_ref: response.reference, payment_status: 'paid' })
-            .eq('id', appId);
-        }
-        window.location.href = '/success';
+      // ✅ SECURE: pass reference to backend for verification — no client-side DB writes
+      onSuccess: (response) => {
+        window.location.href = `/success?reference=${response.reference}`;
       },
       onCancel: () => {
-        // User closed without completing payment — keep on 'paying' step so they can retry
         setStep('paying');
       },
     });
   };
-  // ─────────────────────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -194,9 +173,6 @@ export default function Home() {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
-        {/* Paystack inline.js is intentionally NOT loaded here.
-            It is injected dynamically by loadPaystackScript() only when
-            the user triggers payment, preventing hydration errors. */}
       </Head>
 
       <style>{`
