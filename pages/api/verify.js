@@ -26,19 +26,18 @@ export default async function handler(req, res) {
     const referenceCode = data.data.reference;
     const email = data.data.customer.email;
 
-    // 🔥 UPDATE YOUR DATABASE (Supabase)
+    // Uses service role key — server only, never exposed to client
     const { createClient } = require('@supabase/supabase-js');
-
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY // ⚠️ MUST be service role key (server only)
+      process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
     const { error } = await supabase
       .from('applications')
       .update({
         payment_status: 'paid',
-        payment_ref: referenceCode,
+        payment_ref:    referenceCode,
       })
       .eq('email', email)
       .eq('payment_status', 'pending');
