@@ -194,6 +194,15 @@ export default function Home() {
 
   return (
     <>
+      {/* ─── DEBUG: REMOVE AFTER CONFIRMING ENV VARS ARE LOADED ─── */}
+      <p style={{ color: 'red', fontSize: '12px' }}>
+        {process.env.NEXT_PUBLIC_SUPABASE_URL || 'NO URL'}
+      </p>
+      <p style={{ color: 'red', fontSize: '12px' }}>
+        {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'KEY OK' : 'NO KEY'}
+      </p>
+      {/* ─── END DEBUG ─── */}
+
       <Head>
         <title>Cinematic AI Internship — PromptIQ</title>
         <meta name="description" content="A 3-month internship in cinematic AI content creation. Taught by PromptIQ — the studio behind millions of views." />
