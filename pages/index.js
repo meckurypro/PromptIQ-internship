@@ -6,7 +6,7 @@ const WHATSAPP_GROUP = 'https://chat.whatsapp.com/EFHWekt4c6rJtnumWZpqMT';
 
 // ─── PRICE CONFIG ────────────────────────────────────────────────────────────
 // Controlled entirely by Vercel env var: NEXT_PUBLIC_PRICE_KOBO
-// To update price: change env var in Vercel dashboard → redeploy. Zero code changes.
+// To update price: change env var in Vercel dashboard → redeploy. Zero code changes..
 // 1000000 = ₦10,000 | 1500000 = ₦15,000 | 2500000 = ₦25,000
 const PRICE_KOBO = parseInt(process.env.NEXT_PUBLIC_PRICE_KOBO || '1000000');
 const PRICE_DISPLAY = '₦' + (PRICE_KOBO / 100).toLocaleString('en-NG', { maximumFractionDigits: 0 });
