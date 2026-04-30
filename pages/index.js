@@ -457,7 +457,7 @@ export default function Home() {
                 <h3>One last step.</h3>
                 <p>Your application is saved. Complete your {PRICE_DISPLAY} payment to secure your spot in Cohort 1.</p>
                 <button className="form-submit" onClick={() => openPaystack(applicationId, null)}>
-                  Complete Payment — {PRICE_DISPLAY} →
+                  Complete Payment — {PRICE_DISPLAY}
                 </button>
                 {submitError && <p className="submit-err">{submitError}</p>}
               </div>
@@ -471,7 +471,7 @@ export default function Home() {
         <div className="f-logo">
           <img src="/logo.png" alt="PromptIQ" onError={e => { e.target.style.display = 'none'; }} />
         </div>
-        <p>© 2025 PromptIQ. All rights reserved.</p>
+        <p>© 2026 PromptIQ. All rights reserved.</p>
         <p style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>Cinematic AI Content Creation Internship</p>
       </footer>
     </>
