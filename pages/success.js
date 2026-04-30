@@ -99,11 +99,14 @@ export default function Success() {
           animation:rise 0.7s cubic-bezier(0.22,1,0.36,1) both;
         }
         .logo-wrap {
-          display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:32px;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          margin-bottom:32px;
         }
-        .logo-wrap img { height:28px; }
-        .logo-text { font-family:'Outfit',sans-serif; font-weight:800; font-size:1.05rem; color:var(--white); }
-        .logo-text span { color:var(--pink); }
+        .logo-wrap img {
+          height:32px;
+        }
         .check {
           width:64px; height:64px; border-radius:50%;
           background:linear-gradient(135deg,var(--pink-dim),var(--purple-dim));
@@ -168,8 +171,7 @@ export default function Success() {
 
       <div className="card">
         <div className="logo-wrap">
-          <img src="/logo.png" alt="PromptIQ" onError={e => { e.target.style.display = 'none'; }} />
-          <div className="logo-text">Prompt<span>IQ</span></div>
+          <img src="/logo.png" alt="PromptIQ" />
         </div>
 
         <div className="check">✦</div>
