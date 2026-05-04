@@ -13,10 +13,9 @@ export default function Success() {
   // ── Payment verification ──────────────────────────────────────────────────
   useEffect(() => {
     if (!reference) return;
-
     const verifyPayment = async () => {
       try {
-        const res = await fetch(`/api/verify?reference=${reference}`);
+        const res  = await fetch(`/api/verify?reference=${reference}`);
         const data = await res.json();
         if (data.status === 'success') {
           setStatus('success');
@@ -29,7 +28,6 @@ export default function Success() {
         setTimeout(() => router.replace('/'), 3000);
       }
     };
-
     verifyPayment();
   }, [reference]);
 
@@ -39,43 +37,35 @@ export default function Success() {
     const canvas = document.getElementById('confetti');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
+    canvas.width  = window.innerWidth;
     canvas.height = window.innerHeight;
     const particles = Array.from({ length: 80 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height * -1,
-      r: Math.random() * 5 + 2,
-      d: Math.random() * 3 + 1,
-      color: ['#E8749A', '#9B6DFF', '#F590AE', '#B490FF', '#FFF8F5'][
-        Math.floor(Math.random() * 5)
-      ],
-      tilt: Math.random() * 10 - 5,
-      tiltAngle: 0,
+      x:          Math.random() * canvas.width,
+      y:          Math.random() * canvas.height * -1,
+      r:          Math.random() * 5 + 2,
+      d:          Math.random() * 3 + 1,
+      color:      ['#E8749A','#9B6DFF','#F590AE','#B490FF','#FFF8F5'][Math.floor(Math.random() * 5)],
+      tilt:       Math.random() * 10 - 5,
+      tiltAngle:  0,
     }));
     let frame;
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((p) => {
+      particles.forEach(p => {
         ctx.beginPath();
         ctx.ellipse(p.x, p.y, p.r, p.r * 0.5, p.tilt, 0, Math.PI * 2);
         ctx.fillStyle = p.color;
         ctx.fill();
-        p.y += p.d;
-        p.tiltAngle += 0.05;
-        p.tilt = Math.sin(p.tiltAngle) * 8;
-        if (p.y > canvas.height) {
-          p.y = -10;
-          p.x = Math.random() * canvas.width;
-        }
+        p.y          += p.d;
+        p.tiltAngle  += 0.05;
+        p.tilt        = Math.sin(p.tiltAngle) * 8;
+        if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; }
       });
       frame = requestAnimationFrame(draw);
     };
     draw();
     const timer = setTimeout(() => cancelAnimationFrame(frame), 4000);
-    return () => {
-      cancelAnimationFrame(frame);
-      clearTimeout(timer);
-    };
+    return () => { cancelAnimationFrame(frame); clearTimeout(timer); };
   }, [status]);
 
   // ── Shared styles ─────────────────────────────────────────────────────────
@@ -100,14 +90,9 @@ export default function Success() {
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
     body {
       font-family:'DM Sans',sans-serif;
-      background:var(--brown);
-      color:var(--body);
-      min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      overflow:hidden;
-      -webkit-font-smoothing:antialiased;
+      background:var(--brown); color:var(--body);
+      min-height:100vh; display:flex; align-items:center; justify-content:center;
+      overflow:hidden; -webkit-font-smoothing:antialiased;
     }
     body::before {
       content:''; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:0.35;
@@ -118,46 +103,35 @@ export default function Success() {
     /* ── State screens ── */
     .state-screen {
       position:relative; z-index:2;
-      display:flex; flex-direction:column;
-      align-items:center; justify-content:center;
-      gap:12px; text-align:center;
+      display:flex; flex-direction:column; align-items:center;
+      justify-content:center; gap:12px; text-align:center;
     }
     .state-label {
-      font-family:'Outfit',sans-serif; font-size:0.82rem;
-      font-weight:700; letter-spacing:2px; text-transform:uppercase;
-      color:var(--purple-bright);
+      font-family:'Outfit',sans-serif; font-size:0.82rem; font-weight:700;
+      letter-spacing:2px; text-transform:uppercase; color:var(--purple-bright);
     }
-    .state-message {
-      font-size:0.9rem; color:var(--muted); max-width:280px; line-height:1.7;
-    }
+    .state-message { font-size:0.9rem; color:var(--muted); max-width:280px; line-height:1.7; }
     .spinner {
       width:36px; height:36px; border-radius:50%;
-      border:2px solid var(--border-soft);
-      border-top-color:var(--pink);
+      border:2px solid var(--border-soft); border-top-color:var(--pink);
       animation:spin 0.8s linear infinite;
     }
     .failed-icon {
       width:52px; height:52px; border-radius:50%;
-      background:rgba(232,116,154,0.09);
-      border:1px solid var(--pink-border);
-      display:flex; align-items:center; justify-content:center;
-      font-size:1.4rem;
+      background:rgba(232,116,154,0.09); border:1px solid var(--pink-border);
+      display:flex; align-items:center; justify-content:center; font-size:1.4rem;
     }
 
     /* ── Success card ── */
     .card {
       position:relative; z-index:2;
-      background:var(--brown-card);
-      border:1px solid var(--border-soft);
-      border-radius:16px;
-      padding:56px 48px;
-      max-width:560px; width:90%;
-      text-align:center;
+      background:var(--brown-card); border:1px solid var(--border-soft);
+      border-radius:16px; padding:56px 48px;
+      max-width:560px; width:90%; text-align:center;
       animation:rise 0.7s cubic-bezier(0.22,1,0.36,1) both;
     }
     .logo-wrap {
-      display:flex; align-items:center; justify-content:center;
-      margin-bottom:32px;
+      display:flex; align-items:center; justify-content:center; margin-bottom:32px;
     }
     .logo-wrap img { height:32px; }
     .check {
@@ -172,8 +146,7 @@ export default function Success() {
       font-family:'Bebas Neue',sans-serif;
       font-size:clamp(2.4rem,6vw,3.2rem);
       letter-spacing:2px; text-transform:uppercase;
-      color:var(--white); line-height:1;
-      margin-bottom:8px;
+      color:var(--white); line-height:1; margin-bottom:8px;
       animation:fadeUp 0.5s 0.3s ease both;
     }
     h1 span { color:var(--pink); }
@@ -200,7 +173,7 @@ export default function Success() {
       font-size:1rem; font-weight:700; padding:18px 40px;
       border-radius:100px; border:none; cursor:pointer;
       text-decoration:none; width:100%;
-      transition:opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      transition:opacity 0.2s,transform 0.15s,box-shadow 0.2s;
       animation:fadeUp 0.5s 0.55s ease both;
       box-shadow:0 8px 32px rgba(232,116,154,0.25);
     }
@@ -292,7 +265,7 @@ export default function Success() {
   return (
     <>
       <Head>
-        <title>Welcome to Cohort 1 — PromptIQ</title>
+        <title>Welcome to Cohort 1 — PromptIQ Creator Internship</title>
         <link rel="icon" href="/favicon.png" />
         {fontLinks}
       </Head>
@@ -302,7 +275,7 @@ export default function Success() {
 
       <div className="card">
         <div className="logo-wrap">
-          <img src="/logo.png" alt="PromptIQ" />
+          <img src="/logo.png" alt="PromptIQ" onError={e => { e.target.style.display = 'none'; }} />
         </div>
 
         <div className="check">✦</div>
@@ -310,7 +283,7 @@ export default function Success() {
         <h1>You're in, <span>Cohort 1.</span></h1>
 
         <p className="sub">
-          Payment confirmed. Welcome to the PromptIQ Cinematic AI Internship.
+          Payment confirmed. Welcome to the PromptIQ Creator Internship.
           You're about to learn the exact workflow behind millions of views —
           on real productions, with real audiences.
         </p>
